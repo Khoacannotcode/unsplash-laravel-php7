@@ -1,22 +1,61 @@
 version: v1.0
-name: Test MyApp
+name: CI Pipeline
 agent:
   machine:
     type: e1-standard-2
     os_image: ubuntu2004
-
 blocks:
-  - name: Test
+  - name: Install dependencies
     task:
       jobs:
-        - name: Test
+        - name: Composer
           commands:
             - checkout
+            - cd src
             - cache restore
             - composer install
             - cache store
-            - cp .env.example .env
-            - php artisan key:generate
-            - mkdir -p database
-            - touch database/database.sqlite
-            - ./vendor/bin/phpunit
+      env_vars:
+        - name: APP_ENV
+          value: development
+    dependencies: []
+  - name: Code Analysis
+    dependencies:
+      - Install dependencies
+    task:
+      prologue:
+        commands:
+          - checkout
+          - cd src
+          - cache restore
+      jobs:
+        - name: Mess Detect
+          commands:
+            - php vendor/bin/phpmd routes json phpmd_rules.xml
+            - php vendor/bin/phpmd resources json phpmd_rules.xml
+            - php vendor/bin/phpmd app/Http json phpmd_rules.xml
+  - name: Test
+    dependencies:
+      - Code Analysis
+    task:
+      secrets:
+        - name: app-env
+      env_vars:
+        - name: APP_ENV
+          value: test
+      prologue:
+        commands:
+          - checkout
+          - cd src
+          - cache restore
+          - cp .env.example .env
+          - 'php srtisan key:generate'
+      jobs:
+        - name: Integration Tests
+          commands:
+            - php vendor/bin/phpunit
+        - name: Browser Tests
+          commands:
+            - 'php artisan dusk:chrome-driver'
+            - php artisan serve --port=8021 &
+            - php artisan dusk
