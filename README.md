@@ -1,1 +1,1 @@
-https://khoacannotcode.semaphoreci.com/badges/unsplash-laravel-php7/branches/main.svg
+[![Build Status](https://khoacannotcode.semaphoreci.com/badges/unsplash-laravel-php7/branches/main.svg)](https://khoacannotcode.semaphoreci.com/projects/unsplash-laravel-php7)
